@@ -46,6 +46,7 @@ jobs:
             - name: Run & export Pluto notebooks
               run: |
                 julia -e 'using Pkg
+                  Pkg.Registry.add(url="https://github.com/ITensor/ITensorRegistry")
                   Pkg.activate(mktempdir())
                   Pkg.add([
                     Pkg.PackageSpec(name="PlutoSliderServer", version="0.3.2-0.3"),
