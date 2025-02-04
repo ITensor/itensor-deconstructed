@@ -5,6 +5,20 @@ This repository contains a [Pluto.jl](https://github.com/fonsp/Pluto.jl) noteboo
 that demonstrates a new set of packages that are being developed as part of a
 [rewrite of ITensors.jl](https://github.com/ITensor/ITensors.jl/pull/1611).
 
+To run the code, clone the repository and enter the directory where it is cloned:
+```
+git clone https://github.com/ITensor/itensor-deconstructed.git
+cd itensor-deconstructed
+```
+Then, install and launch Pluto.jl:
+```julia
+julia> import Pkg; Pkg.add("Pluto")
+
+julia> Pluto.run()
+```
+Pluto will open in the browser, where you can open the file `itensor-deconstructed.jl` that you can find
+in your cloned version of this repository.
+
 You can view a static webpage generated from the notebook here:
 [https://itensor.github.io/itensor-deconstructed/itensor-deconstructed.html](https://itensor.github.io/itensor-deconstructed/itensor-deconstructed.html).
 
