@@ -28,16 +28,25 @@ using BlockSparseArrays: BlockSparseArray
 # ╔═╡ 8cffacf7-b87c-4a8a-9c2f-edeeb791bbd5
 using BlockArrays: Block
 
-# ╔═╡ 6a3be7cb-b5c1-413f-a3eb-b6b06300adb4
+# ╔═╡ 1e35e904-fc55-45df-b7cd-4996744fce16
+using ITensorBase: ITensor, Index, inds
+
+# ╔═╡ c836c0d2-1685-4a83-a436-d251c31d8c15
+using NamedDimsArrays: AbstractNamedDimsArray
+
+# ╔═╡ fb236256-490a-4524-a5f3-36ecdf927fe0
 using SymmetrySectors: U1, dual
 
-# ╔═╡ 3024580b-1314-4942-aafa-4cc3eb3da80b
+# ╔═╡ 3a90675f-1a5a-4fc2-8698-96c40394467b
 using GradedUnitRanges: gradedrange
 
 # ╔═╡ 957bab60-86a5-4cbb-84f8-e51ec0ce8723
 md"""
 # ITensor deconstructed
 ### Splitting apart ITensors.jl for better _composibility_, _generalizability_, _extensibility_, and _maintainability_
+
+- [https://github.com/ITensor/itensor-deconstructed](https://github.com/ITensor/itensor-deconstructed)
+- [https://itensor.github.io/itensor-deconstructed/itensor-deconstructed.html](https://itensor.github.io/itensor-deconstructed/itensor-deconstructed.html)
 """
 
 # ╔═╡ 75070daa-0985-4886-95a7-b671f6e9005f
@@ -54,14 +63,22 @@ graph TD
     Tensor --> Diag(NDTensors.Diag)
     Tensor --> BlockSparse(NDTensors.BlockSparse)
     Tensor --> DiagBlockSparse(NDTensors.DiagBlockSparse)
+    Dense --> Array(Base.Array)
+    Dense --> CUDA(CUDA.jl)
+    Diag --> Array
+    Diag --> CUDA
+    BlockSparse --> Array
+    BlockSparse --> CUDA
+    DiagBlockSparse --> Array
+    DiagBlockSparse --> CUDA
 """
 
 # ╔═╡ f1385767-d637-42f1-827e-9aadd1ddfed7
 md"""
 ### Problems with the current design:
-- Based around a single large package, **NDTensors.jl**, and a single type `NDTensors.Tensor` that has a variety of backends ("storage types").
+- Tensors and tensor operations are based around a single large package, **NDTensors.jl**, and a single type `NDTensors.Tensor` that has a variety of backends ("storage types").
 - Flat structure makes the library monolithic, making it hard to maintain, test, extend, and compose parts:
-  - Block diagonal tensors should be a composition of diagonal and block sparse, but that is hard to do with the current design.
+  - Block diagonal tensors should be a composition of diagonal and block sparse, but that is hard to do with the current design, which leads to a lot of code duplication and maintenance challengs.
   - GPU support is much better now (thanks to **Karl Pierce**), but a better library design could have made it easier.
   - Challenging to generalize to ambitious new types, like non-abelian symmetries, distributed tensors, new GPU types, etc.
 """
@@ -82,6 +99,8 @@ graph TD
     NamedDimsArrays --> BlockSparseArrays(BlockSparseArrays.jl)
     NamedDimsArrays --> FusionTensors(FusionTensors.jl)
     DiagonalArrays --> SparseArraysBase
+    DiagonalArrays --> Array
+    DiagonalArrays --> CUDA
     BlockSparseArrays --> SparseArraysBase
     BlockSparseArrays --> Array
     BlockSparseArrays --> CUDA
@@ -94,29 +113,47 @@ graph TD
 md"""
 ### Advantages of the new design
 - Based around a series of standalone Julia packages that implement Julia arrays adhering to the `Base.AbstractArray` interface which are then composed with each other to get more sophisticated behavior.
-- Easier maintenance, testing (packages have self-contained tests, docs, maintainence, etc.).
+- ITensors are now just special types of a more general **NamedDimsArrays.jl**[^1] package, making the design more flexible and generalizable. 
+- Easier maintenance, testing (packages will have self-contained tests, docs, maintainence, etc.).
 - Better composibility, code sharing.
-- Easier to generalize to other storage types:
-  - GPU
-  - Distributed
-  - Non-abelian tensors (FusionsTensors.jl, in progress by **Olivier Gauthé**)
+  - **BlockSparseArrays.jl**[^2] and **DiagonalArrays.jl**[^3] are both based on code shared in **SparseArraysBase.jl**[^4], and can be composed with each other in various ways.
+  - The new `BlockSparseArray` type is much more flexible than the current one in NDTensors.jl, for example it is designed to allow storing arbitrary kinds of data as blocks, supports many more slicing and broadcasting operations, etc.
+- The new design will make it easier to enable ITensors to have new kinds of storage types:
+  - Non-abelian tensors (**FusionTensors.jl**[^5], in progress by **Olivier Gauthé**, with the help of **Lukas Devos** and **Miles Stoudenmire**.)
+  - GPU (in progress in the new system but a lot work already)
+  - Distributed (future work)
+  - Automatic fermion sign support (future work)
   - etc.
-- Block sparse array type is more flexible, easier to make work with arbitrary data in blocks (such as sparse blocks, diagonal blocks, GPU blocks, heterogeneous blocks, etc.).
+
+[1]: [https://github.com/ITensor/NamedDimsArrays.jl](https://github.com/ITensor/NamedDimsArrays.jl)
+
+[2]: [https://github.com/ITensor/BlockSparseArrays.jl](https://github.com/ITensor/BlockSparseArrays.jl)
+
+[3]: [https://github.com/ITensor/DiagonalArrays.jl](https://github.com/ITensor/DiagonalArrays.jl)
+
+[4]: [https://github.com/ITensor/SparseArraysBase.jl](https://github.com/ITensor/SparseArraysBase.jl)
+
+[5]: [https://github.com/ITensor/FusionTensors.jl](https://github.com/ITensor/FusionTensors.jl)
 """
 
 # ╔═╡ 34c5e555-3919-42a1-af28-103edfeb9140
 md"""
 ### How to install
 - All still a work in progress, used internally right now.
-- For now, available at the new ITensor registry[^1], set up by **Lukas Devos**:
+- For now, they are available at the new ITensor registry[^1], set up by **Lukas Devos**:
 ```julia
-using Pkg: Pkg
+import Pkg
+# Add the registry (only need to do this once per machine)
 Pkg.Registry.add(url="https://github.com/ITensor/ITensorRegistry")
+
+# Add a package from the registry
 Pkg.add("SparseArraysBase")
+
+# Use the package
 using SparseArraysBase
 a = SparseArrayDOK{Float64}(2, 2)
 ```
-- We plan to register them in Julia's General registry once they are ready and being used inside of the next major ITensors.jl release.
+- We plan to register them in Julia's General registry once they are ready and being used inside one of the next major ITensors.jl release.
 
 [1]: [https://github.com/ITensor/ITensorRegistry](https://github.com/ITensor/ITensorRegistry)
 """
@@ -127,7 +164,7 @@ md"""
 - **SparseArraysBase.jl**[^1] elementwise n-dimensional sparse array interface and library, with a built-in dictionary-of-keys array.
   - SparseArrays.jl[^2] Julia standard library is focused on CSC format sparse matrices and vectors.
   - SparseArrayKit.jl[^3] also has an n-dimensional dictionary-of-keys sparse array, but it doesn't allow for generic element types (like a sparse array of arrays, which is helpful for implementing block sparse arrays), and isn't as extensible.
-- Designed around an extensible interface based on **DerivableInterfaces.jl**[^4], where even non-subtypes of `SparseArraysBase.AbstractSparseArray` can opt-in to functionality defined in SparseArraysBase.jl.
+- Designed around an extensible interface based on **DerivableInterfaces.jl**[^4], which allows non-subtypes of `SparseArraysBase.AbstractSparseArray` to opt-in to functionality defined in SparseArraysBase.jl.
 
 [1]: [https://github.com/ITensor/SparseArraysBase.jl](https://github.com/ITensor/SparseArraysBase.jl)
 
@@ -168,11 +205,14 @@ md"## Algebra"
 # ╔═╡ 1ac8503e-7fa3-401f-81c4-ac0c399b35a9
 md"### Addition, permutation, scaling"
 
+# ╔═╡ 446b102b-a66a-48cc-be68-5cb3cf601fa9
+2a
+
+# ╔═╡ b10dbf16-047a-437a-b34e-7a8a201f7b82
+a'
+
 # ╔═╡ 252988b6-780f-46e7-97c3-40386042a715
 a .+ 2 .* a'
-
-# ╔═╡ 336b46e2-a5bc-4567-a5dc-74653ca8b59e
-a .+ 2 .* PermutedDimsArray(a, (2, 1))
 
 # ╔═╡ f54173fa-b013-433e-9f8f-c6e2e9713757
 md"### Matrix multiplication"
@@ -214,13 +254,18 @@ cdimnames
 md"""
 # NamedDimsArrays.jl
 - **NamedDimsArrays.jl**[^1] is a generalization of **ITensors.jl**[^2] that provides functionality and interfaces for Julia arrays with names attached to the dimensions.
-  - It will serve as the basis for the rewrite of **ITensors.jl**[^3], where `ITensors.ITensor` will just be a particular type of `NamedDimsArrays.AbstractNamedDimsArray`, and most functionality will be implemented in **NamedDimsArrays.jl**.
+  - It will serve as the basis for the rewrite of ITensors.jl[^3], where `ITensors.ITensor` will just be a particular type of `NamedDimsArrays.AbstractNamedDimsArray`, and most functionality will be implemented in NamedDimsArrays.jl.
+- Note there are a number of Julia packages that provide named dimensions, such as NamedDims.jl[^4] and DimensionalData.jl[^5], but we make different interface and design choices (such as automatically aligning dimensions when the names are not aligned).
 
 [1]: [https://github.com/ITensor/NamedDimsArrays.jl](https://github.com/ITensor/NamedDimsArrays.jl)
 
 [2]: [https://github.com/ITensor/ITensors.jl](https://github.com/ITensor/ITensors.jl)
 
 [3]: [https://github.com/ITensor/ITensors.jl/pull/1611](https://github.com/ITensor/ITensors.jl/pull/1611)
+
+[4]: [https://github.com/invenia/NamedDims.jl](https://github.com/invenia/NamedDims.jl)
+
+[5]: [https://github.com/rafaqz/DimensionalData.jl](https://github.com/rafaqz/DimensionalData.jl)
 """
 
 # ╔═╡ 64aafb37-9384-4b3f-8bca-e62a647d3597
@@ -343,50 +388,108 @@ bᵢⱼ = NamedDimsArray(b, ("i", "j"))
 # ╔═╡ f1d915e9-92b3-40d9-bfb4-e8e784fc71da
 bⱼᵢ = NamedDimsArray(b, ("j", "i"))
 
-# ╔═╡ b264ea72-85e6-4a17-a20f-555639e3b81b
-# bᵢⱼ .+ 2 .* bⱼᵢ # TODO: Broken
-
 # ╔═╡ ae4e70ad-91d9-4630-a8fe-308713edf36e
 bₖⱼ = NamedDimsArray(b, ("k", "j"))
 
 # ╔═╡ 41e74a31-50dd-49cd-9166-fc04cc2b6f99
 bᵢⱼ * bₖⱼ
 
-# ╔═╡ 7a54501e-101e-4908-96f6-ff345d76e1c1
-md"## Symmetry sectors"
+# ╔═╡ a01d4764-7426-45b2-b510-c11f39f20eec
+md"""
+# Next-generation ITensors.jl
+#### Prototyping in ITensorBase.jl[^1]
 
-# ╔═╡ 4da2b7d4-c4ec-495e-913a-088e50ebca38
-r = gradedrange([U1(0) => 2, U1(1) => 3])
+[1]: [https://github.com/ITensor/ITensorBase.jl](https://github.com/ITensor/ITensorBase.jl)
+"""
 
-# ╔═╡ dd9ad740-474a-4f61-b1b0-747e04f3b0d3
-dual(r)
+# ╔═╡ 127545b5-3fa5-4892-b908-aee022dd7411
+i, j = Index.((2, 2))
 
-# ╔═╡ 69a3f22b-b86c-4b83-941f-f0c76f0651ee
-d = BlockSparseArray{Float64}(r, dual(r))
+# ╔═╡ fe354580-d530-481c-8ebb-4f63f74a4ab7
+x = randn(i, j)
 
-# ╔═╡ 24e12878-43f5-4dcc-9593-c40b21162df3
-axes(d, 1)
+# ╔═╡ f331ef8c-f8d2-492f-9a83-5e32b0569849
+x isa AbstractNamedDimsArray
 
-# ╔═╡ 6f7e0289-7690-41cd-9ec1-8f60a6060f5f
-axes(d, 2)
+# ╔═╡ 48a93f4f-a854-452d-a180-ee2cd2a198c0
+inds(x)
 
-# ╔═╡ dff0e6bf-6287-4afe-be2a-12d8efb34b22
-d[2, 2] = 22;
+# ╔═╡ 80e9a858-f81d-4230-b2bd-7b5caeaebb16
+x[i => 1:2, j => 1]
 
-# ╔═╡ 4575f5d8-92d7-4647-8017-3308c72071de
-d
+# ╔═╡ f8acebaf-0a71-4753-b2d0-6d2b3b96f841
+inds(x[i => 1:2, j => 1])
 
-# ╔═╡ fbbdbc03-ca09-43db-92df-451d83e66e65
-d + d
+# ╔═╡ b751edfa-b1ac-4572-9387-8e48cb1357e9
+y = randn(j, i)
 
-# ╔═╡ c8bda3c5-d639-4304-9245-2cb99abf3ab4
-axes(d + d, 1)
+# ╔═╡ e832a0ef-debf-4e64-9f9b-9706549010ed
+aligndims(y, (i, j))
 
-# ╔═╡ 1791b52d-f1e9-471f-a86c-4e62990437c9
-d * d
+# ╔═╡ 72f895d3-0c22-4e8d-86df-d65c7d0adbc0
+x + y
 
-# ╔═╡ d193695d-0e1b-4699-abeb-beef1bb2b7af
-axes(d * d, 1)
+# ╔═╡ 239e7072-bfeb-4259-a7fa-71bde177ce8c
+unname(x) + unname(y)'
+
+# ╔═╡ 490d7025-577c-471f-80bf-513cdb7fd3ce
+md"""
+# Next steps
+- Get to feature completeness with ITensors.jl.
+  - Main missing features are block sparse truncated SVD, QR, etc.
+  - Abelian symmetric tensors (in progress, a lot is working already, see **SymmetrySectors.jl**[^1] and **GradedUnitRanges.jl**[^2]).
+  - Make sure GPU operations work, particularly with block sparse.
+  - Test out in ITensorMPS.jl[^3] and ITensorNetworks.jl, make appropriate updates as needed (the biggest update we need to make is upgrading the `OpSum` to `MPO`/`TTN` constructor).
+- Continue work on FusionTensors.jl so it acts as a fully working ITensor backend.
+- Special thanks to **Karl Pierce**, **Lukas Devos**, **Olivier Gauthé**, and **Miles Stoudenmire** for help on this!
+
+[1]: [https://github.com/ITensor/SymmetrySectors.jl](https://github.com/ITensor/SymmetrySectors.jl)
+
+[2]: [https://github.com/ITensor/GradedUnitRanges.jl](https://github.com/ITensor/GradedUnitRanges.jl)
+
+[3]: [https://github.com/ITensor/ITensorMPS.jl/pull/108](https://github.com/ITensor/ITensorMPS.jl/pull/108)
+"""
+
+# ╔═╡ 3d03f743-363f-4efb-a817-6f95e643a6c6
+md"""
+# Bonus: Abelian symmetries
+- In the new design, an Abelian symmetric tensor is simply `BlockSparseArrays.BlockArray` with graded vector spaces as the dimensions.
+- Symmetry groups and sectors are defined in **SymmetrySectors.jl**[^1], and graded vector spaces are defined in **GradedUnitRanges.jl**[^2].
+
+[1]: [https://github.com/ITensor/SymmetrySectors.jl](https://github.com/ITensor/SymmetrySectors.jl)
+
+[2]: [https://github.com/ITensor/GradedUnitRanges.jl](https://github.com/ITensor/GradedUnitRanges.jl)
+"""
+
+# ╔═╡ f60276b6-562b-4231-b9f9-05272c34b537
+r = gradedrange([U1(0) => 2, U1(1) => 2])
+
+# ╔═╡ bf99b143-876a-447d-a915-1f975182cef7
+t = BlockSparseArray{Float32}(r, dual(r))
+
+# ╔═╡ 6f2db3b0-c3d8-4e36-bb7e-6e43bf0d7858
+t[Block(1, 1)] = randn(2, 2);
+
+# ╔═╡ 8caf1be9-a6ec-47b9-9b0f-522828df1ef4
+t[Block(2, 2)] = randn(2, 2);
+
+# ╔═╡ dddc98b7-51d6-4e3f-8c15-37668dcd4381
+t
+
+# ╔═╡ bd105b7e-91a9-49e7-910c-a3090c08e0e6
+axes(t, 1)
+
+# ╔═╡ e4191b50-92e0-4e0b-8c10-96b4417fd1cc
+axes(t, 2)
+
+# ╔═╡ 8068c657-8a36-49ee-a009-bc167979fca7
+t * t
+
+# ╔═╡ ba6c2aa7-56e2-4555-8330-8c9a3c70496e
+axes(t * t, 1)
+
+# ╔═╡ 2d674f19-51be-420f-b151-624f8a99f48f
+axes(t * t, 2)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -394,6 +497,7 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 BlockArrays = "8e7c35d0-a365-5155-bbbb-fb81a777f24e"
 BlockSparseArrays = "2c9a651f-6452-4ace-a6ac-809f4280fbb4"
 GradedUnitRanges = "e2de450a-8a67-46c7-b59c-01d5a3d041c5"
+ITensorBase = "4795dd04-0d67-49bb-8f44-b89c448a1dc7"
 Kroki = "b3565e16-c1f2-4fe9-b4ab-221c88942068"
 NamedDimsArrays = "60cbd0c0-df58-4cb7-918c-6f5607b73fde"
 SparseArraysBase = "0d5efcca-f356-4864-8770-e1ed8d78f208"
@@ -403,21 +507,22 @@ TensorAlgebra = "68bd88dc-f39d-4e12-b2ca-f046b68fcc6a"
 [compat]
 BlockArrays = "~1.3.0"
 BlockSparseArrays = "~0.2.2"
-GradedUnitRanges = "~0.1.1"
+GradedUnitRanges = "~0.1.3"
+ITensorBase = "~0.1.14"
 Kroki = "~1.0.0"
-NamedDimsArrays = "~0.3.4"
-SparseArraysBase = "~0.2.6"
-SymmetrySectors = "~0.1.1"
-TensorAlgebra = "~0.1.1"
+NamedDimsArrays = "~0.4.0"
+SparseArraysBase = "~0.2.11"
+SymmetrySectors = "~0.1.3"
+TensorAlgebra = "~0.1.7"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.11.2"
+julia_version = "1.11.3"
 manifest_format = "2.0"
-project_hash = "a12ec5724167efdcf45f8f28e28f3417d8d47247"
+project_hash = "24742ea09a0724cd2716b00e6c13093797666590"
 
 [[deps.Accessors]]
 deps = ["CompositionsBase", "ConstructionBase", "Dates", "InverseFunctions", "MacroTools"]
@@ -526,21 +631,21 @@ version = "1.3.0"
     BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
 
 [[deps.BlockSparseArrays]]
-deps = ["Adapt", "ArrayLayouts", "BlockArrays", "DerivableInterfaces", "Dictionaries", "FillArrays", "GradedUnitRanges", "LinearAlgebra", "MacroTools", "MapBroadcast", "SparseArraysBase", "SplitApplyCombine", "TypeParameterAccessors"]
-git-tree-sha1 = "3122bb0a11b1a16057633540f3949c059d0ffe59"
+deps = ["Adapt", "ArrayLayouts", "BlockArrays", "DerivableInterfaces", "DiagonalArrays", "Dictionaries", "FillArrays", "GPUArraysCore", "GradedUnitRanges", "LinearAlgebra", "MacroTools", "MapBroadcast", "SparseArraysBase", "SplitApplyCombine", "TypeParameterAccessors"]
+git-tree-sha1 = "da110a117d3055cbdb03cdb98697a4cbd8511423"
 uuid = "2c9a651f-6452-4ace-a6ac-809f4280fbb4"
-version = "0.2.5"
+version = "0.2.12"
 weakdeps = ["LabelledNumbers", "TensorAlgebra"]
 
     [deps.BlockSparseArrays.extensions]
-    BlockSparseArraysAdaptExt = "Adapt"
+    BlockSparseArraysGradedUnitRangesExt = "GradedUnitRanges"
     BlockSparseArraysTensorAlgebraExt = ["LabelledNumbers", "TensorAlgebra"]
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
-git-tree-sha1 = "bce6804e5e6044c6daab27bb533d1295e4a2e759"
+git-tree-sha1 = "545a177179195e442472a1c4dc86982aa7a1bef0"
 uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
-version = "0.7.6"
+version = "0.7.7"
 
 [[deps.CommonWorldInvalidations]]
 git-tree-sha1 = "ae52d1c52048455e85a387fbee9be553ec2b68d0"
@@ -599,15 +704,21 @@ version = "1.11.0"
 
 [[deps.DerivableInterfaces]]
 deps = ["Adapt", "ArrayLayouts", "ExproniconLite", "LinearAlgebra", "MLStyle", "MapBroadcast", "TypeParameterAccessors"]
-git-tree-sha1 = "5e859e8e7f961c0e63536b353857a4fdb1a87b21"
+git-tree-sha1 = "1d2da01c828947b2ee5ab730f6c6dd29f6b74136"
 uuid = "6c5e35bf-e59e-4898-b73c-732dcc4ba65f"
-version = "0.3.7"
+version = "0.3.14"
+
+[[deps.DiagonalArrays]]
+deps = ["ArrayLayouts", "DerivableInterfaces", "FillArrays", "LinearAlgebra", "SparseArraysBase"]
+git-tree-sha1 = "f5bac4df77367d0531c34bc18bc081e6f3b9b948"
+uuid = "74fd4be6-21e2-4f6f-823a-4360d37c7a77"
+version = "0.2.3"
 
 [[deps.Dictionaries]]
 deps = ["Indexing", "Random", "Serialization"]
-git-tree-sha1 = "61ab242274c0d44412d8eab38942a49aa46de9d0"
+git-tree-sha1 = "1cdab237b6e0d0960d5dcbd2c0ebfa15fa6573d9"
 uuid = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
-version = "0.4.3"
+version = "0.4.4"
 
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
@@ -628,9 +739,9 @@ uuid = "460bff9d-24e4-43bc-9d9f-a8973cb893f4"
 version = "0.1.11"
 
 [[deps.ExproniconLite]]
-git-tree-sha1 = "4c9ed87a6b3cd90acf24c556f2119533435ded38"
+git-tree-sha1 = "c13f0b150373771b0fdc1713c97860f8df12e6c2"
 uuid = "55351af7-c7e9-48d6-89ff-24e801d99491"
-version = "0.10.13"
+version = "0.10.14"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra"]
@@ -648,11 +759,17 @@ version = "1.13.0"
     SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
     Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
+[[deps.GPUArraysCore]]
+deps = ["Adapt"]
+git-tree-sha1 = "83cf05ab16a73219e5f6bd1bdfa9848fa24ac627"
+uuid = "46192b85-c4d5-4398-a991-12ede77f4527"
+version = "0.2.0"
+
 [[deps.GradedUnitRanges]]
 deps = ["BlockArrays", "Compat", "FillArrays", "LabelledNumbers", "SplitApplyCombine"]
-git-tree-sha1 = "1ecc950f272ca20a415052f460ccf27973087685"
+git-tree-sha1 = "d98b566386fe9330a27e3781b3e3fabb181a4035"
 uuid = "e2de450a-8a67-46c7-b59c-01d5a3d041c5"
-version = "0.1.1"
+version = "0.1.3"
 
 [[deps.HTTP]]
 deps = ["Base64", "CodecZlib", "ConcurrentUtilities", "Dates", "ExceptionUnwrapping", "Logging", "LoggingExtras", "MbedTLS", "NetworkOptions", "OpenSSL", "PrecompileTools", "Random", "SimpleBufferStream", "Sockets", "URIs", "UUIDs"]
@@ -664,6 +781,17 @@ version = "1.10.15"
 git-tree-sha1 = "9c3149243abb5bc0bad0431d6c4fcac0f4443c7c"
 uuid = "f0d1745a-41c9-11e9-1dd9-e5d34d218721"
 version = "1.6.0"
+
+[[deps.ITensorBase]]
+deps = ["Accessors", "DerivableInterfaces", "FillArrays", "LinearAlgebra", "MapBroadcast", "NamedDimsArrays", "UnallocatedArrays", "UnspecifiedTypes", "VectorInterface"]
+git-tree-sha1 = "5a6422a3d878c49d270a24b0248c6bb3d5cb9dbc"
+uuid = "4795dd04-0d67-49bb-8f44-b89c448a1dc7"
+version = "0.1.14"
+weakdeps = ["DiagonalArrays", "SparseArraysBase"]
+
+    [deps.ITensorBase.extensions]
+    ITensorBaseDiagonalArraysExt = "DiagonalArrays"
+    ITensorBaseSparseArraysBaseExt = ["NamedDimsArrays", "SparseArraysBase"]
 
 [[deps.IfElse]]
 git-tree-sha1 = "debdd00ffef04665ccbb3e150747a77560e8fad1"
@@ -764,9 +892,9 @@ version = "0.5.15"
 
 [[deps.MapBroadcast]]
 deps = ["BlockArrays", "Compat", "FillArrays"]
-git-tree-sha1 = "45491d83c46d1045358bd914b37676dc14a9e141"
+git-tree-sha1 = "f735e853fb5dec9e42fc1959deecfe100db4a8f9"
 uuid = "ebd9b9da-f48d-417c-9660-449667d60261"
-version = "0.1.5"
+version = "0.1.7"
 
 [[deps.Markdown]]
 deps = ["Base64"]
@@ -793,10 +921,10 @@ uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 version = "2023.12.12"
 
 [[deps.NamedDimsArrays]]
-deps = ["Adapt", "ArrayLayouts", "DerivableInterfaces", "LinearAlgebra", "MapBroadcast", "Random", "SimpleTraits", "TensorAlgebra", "TypeParameterAccessors"]
-git-tree-sha1 = "4ca46d28fe6ddb77b7e13978551e074bb4afe0f1"
+deps = ["Adapt", "ArrayLayouts", "DerivableInterfaces", "FillArrays", "LinearAlgebra", "MapBroadcast", "Random", "SimpleTraits", "TensorAlgebra", "TypeParameterAccessors"]
+git-tree-sha1 = "b310178db8b4679f887ea47621ab9d6f22a0e990"
 uuid = "60cbd0c0-df58-4cb7-918c-6f5607b73fde"
-version = "0.3.4"
+version = "0.4.0"
 weakdeps = ["BlockArrays"]
 
     [deps.NamedDimsArrays.extensions]
@@ -886,10 +1014,10 @@ uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 version = "1.11.0"
 
 [[deps.SparseArraysBase]]
-deps = ["Accessors", "ArrayLayouts", "DerivableInterfaces", "Dictionaries", "LinearAlgebra", "MapBroadcast"]
-git-tree-sha1 = "fdac66f3374876fe3d01d7e0bc4d5b236405cd36"
+deps = ["Accessors", "ArrayLayouts", "DerivableInterfaces", "Dictionaries", "FillArrays", "LinearAlgebra", "MapBroadcast"]
+git-tree-sha1 = "dffcccc4f0be87825884812094a5a90b06ca4fbe"
 uuid = "0d5efcca-f356-4864-8770-e1ed8d78f208"
-version = "0.2.6"
+version = "0.2.11"
 
 [[deps.SplitApplyCombine]]
 deps = ["Dictionaries", "Indexing"]
@@ -919,9 +1047,9 @@ version = "1.8.0"
 
 [[deps.SymmetrySectors]]
 deps = ["BlockArrays", "GradedUnitRanges", "HalfIntegers", "LabelledNumbers"]
-git-tree-sha1 = "e15b1202195a6dc83e9de37c99504f1fab0025ee"
+git-tree-sha1 = "0dd1adee246747bec9f89f6b7c2b40a3340c7214"
 uuid = "f8a8ad64-adbc-4fce-92f7-ffe2bb36a86e"
-version = "0.1.1"
+version = "0.1.3"
 
 [[deps.TOML]]
 deps = ["Dates"]
@@ -930,9 +1058,9 @@ version = "1.0.3"
 
 [[deps.TensorAlgebra]]
 deps = ["ArrayLayouts", "BlockArrays", "EllipsisNotation", "LinearAlgebra", "TupleTools", "TypeParameterAccessors"]
-git-tree-sha1 = "abe57eee5fb3f47d8031c8962f198db17d1ab02b"
+git-tree-sha1 = "8e2d6d893b476ea3fc50324dba18f9dd5831f883"
 uuid = "68bd88dc-f39d-4e12-b2ca-f046b68fcc6a"
-version = "0.1.1"
+version = "0.1.7"
 weakdeps = ["GradedUnitRanges"]
 
     [deps.TensorAlgebra.extensions]
@@ -955,9 +1083,9 @@ version = "1.6.0"
 
 [[deps.TypeParameterAccessors]]
 deps = ["LinearAlgebra", "SimpleTraits"]
-git-tree-sha1 = "9355ad34e59b8e499e5ade86e37aef293dde6d4d"
+git-tree-sha1 = "46866cb947ce400253fda43f5f545d0744a9e37e"
 uuid = "7e5a90cf-f82e-492e-a09b-e3e26432c138"
-version = "0.2.1"
+version = "0.2.2"
 
     [deps.TypeParameterAccessors.extensions]
     TypeParameterAccessorsFillArraysExt = "FillArrays"
@@ -977,9 +1105,26 @@ deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 version = "1.11.0"
 
+[[deps.UnallocatedArrays]]
+deps = ["Adapt", "FillArrays", "TypeParameterAccessors", "UnspecifiedTypes"]
+git-tree-sha1 = "94b65c1a93ed6e575c8f5a57b942f1c71eaa43eb"
+uuid = "43c9e47c-e622-40fb-bf18-a09fc8c466b6"
+version = "0.1.2"
+
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 version = "1.11.0"
+
+[[deps.UnspecifiedTypes]]
+git-tree-sha1 = "6abc7c7a09e74ae7d46efd94654e4cfddacb8020"
+uuid = "42b3faec-625b-4613-8ddc-352bf9672b8d"
+version = "0.1.3"
+
+[[deps.VectorInterface]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "9166406dedd38c111a6574e9814be83d267f8aec"
+uuid = "409d34a3-91d5-4945-b6ec-7529ddf182d8"
+version = "0.5.0"
 
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
@@ -1015,8 +1160,9 @@ version = "5.11.0+0"
 # ╠═7e184158-5d27-4020-8772-e6047c2dbac5
 # ╟─c1f10b83-4ccd-404f-b42a-098ebcf22a03
 # ╟─1ac8503e-7fa3-401f-81c4-ac0c399b35a9
+# ╠═446b102b-a66a-48cc-be68-5cb3cf601fa9
+# ╠═b10dbf16-047a-437a-b34e-7a8a201f7b82
 # ╠═252988b6-780f-46e7-97c3-40386042a715
-# ╠═336b46e2-a5bc-4567-a5dc-74653ca8b59e
 # ╟─f54173fa-b013-433e-9f8f-c6e2e9713757
 # ╠═9f1c4006-943f-4536-bbc4-1639e2317917
 # ╟─a42299c5-c23c-45f5-93d6-dce3ee5de5e5
@@ -1069,22 +1215,34 @@ version = "5.11.0+0"
 # ╟─6e04e073-3ece-4ced-b36a-4ed76127a567
 # ╠═f6f158e9-a89d-49f2-aa6f-0c4c5a99fdcb
 # ╠═f1d915e9-92b3-40d9-bfb4-e8e784fc71da
-# ╠═b264ea72-85e6-4a17-a20f-555639e3b81b
 # ╠═ae4e70ad-91d9-4630-a8fe-308713edf36e
 # ╠═41e74a31-50dd-49cd-9166-fc04cc2b6f99
-# ╟─7a54501e-101e-4908-96f6-ff345d76e1c1
-# ╠═6a3be7cb-b5c1-413f-a3eb-b6b06300adb4
-# ╠═3024580b-1314-4942-aafa-4cc3eb3da80b
-# ╠═4da2b7d4-c4ec-495e-913a-088e50ebca38
-# ╠═dd9ad740-474a-4f61-b1b0-747e04f3b0d3
-# ╠═69a3f22b-b86c-4b83-941f-f0c76f0651ee
-# ╠═24e12878-43f5-4dcc-9593-c40b21162df3
-# ╠═6f7e0289-7690-41cd-9ec1-8f60a6060f5f
-# ╠═dff0e6bf-6287-4afe-be2a-12d8efb34b22
-# ╠═4575f5d8-92d7-4647-8017-3308c72071de
-# ╠═fbbdbc03-ca09-43db-92df-451d83e66e65
-# ╠═c8bda3c5-d639-4304-9245-2cb99abf3ab4
-# ╠═1791b52d-f1e9-471f-a86c-4e62990437c9
-# ╠═d193695d-0e1b-4699-abeb-beef1bb2b7af
+# ╟─a01d4764-7426-45b2-b510-c11f39f20eec
+# ╠═1e35e904-fc55-45df-b7cd-4996744fce16
+# ╠═127545b5-3fa5-4892-b908-aee022dd7411
+# ╠═fe354580-d530-481c-8ebb-4f63f74a4ab7
+# ╠═c836c0d2-1685-4a83-a436-d251c31d8c15
+# ╠═f331ef8c-f8d2-492f-9a83-5e32b0569849
+# ╠═48a93f4f-a854-452d-a180-ee2cd2a198c0
+# ╠═80e9a858-f81d-4230-b2bd-7b5caeaebb16
+# ╠═f8acebaf-0a71-4753-b2d0-6d2b3b96f841
+# ╠═b751edfa-b1ac-4572-9387-8e48cb1357e9
+# ╠═e832a0ef-debf-4e64-9f9b-9706549010ed
+# ╠═72f895d3-0c22-4e8d-86df-d65c7d0adbc0
+# ╠═239e7072-bfeb-4259-a7fa-71bde177ce8c
+# ╟─490d7025-577c-471f-80bf-513cdb7fd3ce
+# ╟─3d03f743-363f-4efb-a817-6f95e643a6c6
+# ╠═fb236256-490a-4524-a5f3-36ecdf927fe0
+# ╠═3a90675f-1a5a-4fc2-8698-96c40394467b
+# ╠═f60276b6-562b-4231-b9f9-05272c34b537
+# ╠═bf99b143-876a-447d-a915-1f975182cef7
+# ╠═6f2db3b0-c3d8-4e36-bb7e-6e43bf0d7858
+# ╠═8caf1be9-a6ec-47b9-9b0f-522828df1ef4
+# ╠═dddc98b7-51d6-4e3f-8c15-37668dcd4381
+# ╠═bd105b7e-91a9-49e7-910c-a3090c08e0e6
+# ╠═e4191b50-92e0-4e0b-8c10-96b4417fd1cc
+# ╠═8068c657-8a36-49ee-a009-bc167979fca7
+# ╠═ba6c2aa7-56e2-4555-8330-8c9a3c70496e
+# ╠═2d674f19-51be-420f-b151-624f8a99f48f
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
