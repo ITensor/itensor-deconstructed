@@ -49,7 +49,6 @@ md"""
 ### Splitting apart ITensors.jl for better _composibility_, _generalizability_, _extensibility_, and _maintainability_
 
 - [https://github.com/ITensor/itensor-deconstructed](https://github.com/ITensor/itensor-deconstructed)
-- [https://itensor.github.io/itensor-deconstructed/itensor-deconstructed.html](https://itensor.github.io/itensor-deconstructed/itensor-deconstructed.html)
 """
 
 # ╔═╡ 75070daa-0985-4886-95a7-b671f6e9005f
