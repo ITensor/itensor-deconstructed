@@ -249,6 +249,9 @@ c, cdimnames = contract(a1, ("i", "j", "k"), a2, ("j", "k", "l"));
 # ╔═╡ 651ad156-0f31-467c-9610-7bea7f01869d
 c
 
+# ╔═╡ f7c26fda-86e4-4637-a2cb-5636302f24f6
+permutedims(a1, (2, 3, 1))
+
 # ╔═╡ 47c85d51-9f2f-4cc1-91fc-cf24b43bad20
 cdimnames
 
@@ -297,8 +300,17 @@ aᵢⱼ["j" => 2, "i" => 1]
 # ╔═╡ 3cfd4eda-9c68-405e-ad06-7ba3d339476b
 aᵢⱼ["i" => 1:2, "j" => 2]
 
+# ╔═╡ 7b0d5785-25c7-45d6-b403-5d32fba29984
+unname(aᵢⱼ["i" => 1:2, "j" => 2])
+
+# ╔═╡ 0f10e645-7b4c-4d63-9e70-44bf8ad2b5fe
+@view aᵢⱼ["i" => 1:2, "j" => 2]
+
 # ╔═╡ 70a57992-ee1d-4569-a1c4-28b7aadbb60b
 aⱼᵢ = NamedDimsArray(a, ("j", "i"))
+
+# ╔═╡ cb39b4d2-163b-4a2c-9963-a525f14dd3dd
+aᵢⱼ + 2aⱼᵢ
 
 # ╔═╡ 1b2fa3e2-c9dd-4311-912c-4d20f31b131b
 aᵢⱼ .+ 2 .* aⱼᵢ
@@ -312,11 +324,17 @@ dimnames(aₖⱼ)
 # ╔═╡ 1436b235-4632-4799-9527-071133de55bb
 aᵢⱼ * aₖⱼ # Perform tensor contraction, same as: a * a'
 
+# ╔═╡ f7c155ea-3145-4593-a602-df36f64740d4
+a * a'
+
 # ╔═╡ 0a8f0c74-d0e5-4c06-bd4c-39587be2a699
 dimnames(aᵢⱼ * aₖⱼ)
 
 # ╔═╡ 97dffb52-d83f-4e4c-93a3-1956e67ddcfa
 aligndims(aᵢⱼ, ("j", "i")) # Align the dimensions, permute the underlying data
+
+# ╔═╡ 0cd4a492-2f6c-4a3c-8d12-590a6d387f40
+aᵢⱼ
 
 # ╔═╡ 5b46d578-92ac-44fd-881d-d1d1eb34b3a7
 dimnames(aligndims(aᵢⱼ, ("j", "i")))
@@ -366,6 +384,9 @@ blocks(b)
 # ╔═╡ 6b357db3-fe0c-45a1-afc6-44e35e74b4c0
 md"## Indexing/slicing"
 
+# ╔═╡ 61b9fcc9-f65f-4a2c-b0f2-d0bbb2c01c94
+b
+
 # ╔═╡ 96014d9c-32ce-464a-9a62-36488c9c18ae
 b[Block(1, 1)]
 
@@ -412,6 +433,9 @@ i, j = Index.((2, 2))
 
 # ╔═╡ fe354580-d530-481c-8ebb-4f63f74a4ab7
 x = randn(i, j)
+
+# ╔═╡ 003c379c-0189-4d3f-9578-3afb0c747ebd
+typeof(x)
 
 # ╔═╡ f331ef8c-f8d2-492f-9a83-5e32b0569849
 x isa AbstractNamedDimsArray
@@ -1180,6 +1204,7 @@ version = "5.11.0+0"
 # ╠═37744e06-edd3-4f95-8cf1-6e2a94915eb8
 # ╠═800a9c3a-8fd5-4a84-b028-09f6342efddf
 # ╠═651ad156-0f31-467c-9610-7bea7f01869d
+# ╠═f7c26fda-86e4-4637-a2cb-5636302f24f6
 # ╠═47c85d51-9f2f-4cc1-91fc-cf24b43bad20
 # ╟─b292a848-d9c9-45a5-a120-949fbe315eab
 # ╟─64aafb37-9384-4b3f-8bca-e62a647d3597
@@ -1193,13 +1218,18 @@ version = "5.11.0+0"
 # ╠═44b63ebd-3919-472e-8931-5faa40dbe515
 # ╠═c97567ef-1141-4b3e-bea2-9dda16649681
 # ╠═3cfd4eda-9c68-405e-ad06-7ba3d339476b
+# ╠═7b0d5785-25c7-45d6-b403-5d32fba29984
+# ╠═0f10e645-7b4c-4d63-9e70-44bf8ad2b5fe
 # ╠═70a57992-ee1d-4569-a1c4-28b7aadbb60b
+# ╠═cb39b4d2-163b-4a2c-9963-a525f14dd3dd
 # ╠═1b2fa3e2-c9dd-4311-912c-4d20f31b131b
 # ╠═67c1d608-6117-45c4-b9a1-7d3fc0608dde
 # ╠═077804b8-6ec7-4921-93e0-f271aa4a71bd
 # ╠═1436b235-4632-4799-9527-071133de55bb
+# ╠═f7c155ea-3145-4593-a602-df36f64740d4
 # ╠═0a8f0c74-d0e5-4c06-bd4c-39587be2a699
 # ╠═97dffb52-d83f-4e4c-93a3-1956e67ddcfa
+# ╠═0cd4a492-2f6c-4a3c-8d12-590a6d387f40
 # ╠═5b46d578-92ac-44fd-881d-d1d1eb34b3a7
 # ╟─c9449cf1-7a48-4f68-9d62-aa86e5887840
 # ╟─8891acda-396f-42ee-ac73-30b907932905
@@ -1213,6 +1243,7 @@ version = "5.11.0+0"
 # ╠═2ec56d37-fba6-4dc1-8585-f8a309b3ba4e
 # ╟─6b357db3-fe0c-45a1-afc6-44e35e74b4c0
 # ╠═8cffacf7-b87c-4a8a-9c2f-edeeb791bbd5
+# ╠═61b9fcc9-f65f-4a2c-b0f2-d0bbb2c01c94
 # ╠═96014d9c-32ce-464a-9a62-36488c9c18ae
 # ╠═12f3e0a2-991c-45ca-9ea1-b11ceb6a29a6
 # ╠═ee2f5908-6d8d-4f39-8a7a-5fdb676f8959
@@ -1228,6 +1259,7 @@ version = "5.11.0+0"
 # ╠═1e35e904-fc55-45df-b7cd-4996744fce16
 # ╠═127545b5-3fa5-4892-b908-aee022dd7411
 # ╠═fe354580-d530-481c-8ebb-4f63f74a4ab7
+# ╠═003c379c-0189-4d3f-9578-3afb0c747ebd
 # ╠═c836c0d2-1685-4a83-a436-d251c31d8c15
 # ╠═f331ef8c-f8d2-492f-9a83-5e32b0569849
 # ╠═48a93f4f-a854-452d-a180-ee2cd2a198c0
