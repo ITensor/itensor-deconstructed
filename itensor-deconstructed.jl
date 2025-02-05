@@ -25,6 +25,9 @@ using NamedDimsArrays: aligndims, dimnames, unname
 # ╔═╡ 5e2dd3f1-de9f-416d-b259-6658f2781483
 using BlockSparseArrays: BlockSparseArray
 
+# ╔═╡ 7edf8314-0645-4e52-afc6-f9ac3fe8de9a
+using BlockArrays: blocks
+
 # ╔═╡ 8cffacf7-b87c-4a8a-9c2f-edeeb791bbd5
 using BlockArrays: Block
 
@@ -357,6 +360,9 @@ b[4, 2] = 42;
 
 # ╔═╡ d1c55959-d134-4085-a3f4-2c9a766b2ebf
 b
+
+# ╔═╡ 2ec56d37-fba6-4dc1-8585-f8a309b3ba4e
+blocks(b)
 
 # ╔═╡ 6b357db3-fe0c-45a1-afc6-44e35e74b4c0
 md"## Indexing/slicing"
@@ -1204,6 +1210,8 @@ version = "5.11.0+0"
 # ╠═6b98aff2-6139-48c6-9956-a2b5ad5e4ebc
 # ╠═2b8a1816-b04b-4cc0-a2b3-1700038cbf9c
 # ╠═d1c55959-d134-4085-a3f4-2c9a766b2ebf
+# ╠═7edf8314-0645-4e52-afc6-f9ac3fe8de9a
+# ╠═2ec56d37-fba6-4dc1-8585-f8a309b3ba4e
 # ╟─6b357db3-fe0c-45a1-afc6-44e35e74b4c0
 # ╠═8cffacf7-b87c-4a8a-9c2f-edeeb791bbd5
 # ╠═96014d9c-32ce-464a-9a62-36488c9c18ae
