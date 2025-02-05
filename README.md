@@ -19,15 +19,19 @@ julia> Pluto.run()
 Pluto will open in the browser, where you can open the file `itensor-deconstructed.jl` that you can find
 in your cloned version of this repository.
 
+<!---
 You can view a static webpage generated from the notebook here:
 [https://itensor.github.io/itensor-deconstructed/itensor-deconstructed.html](https://itensor.github.io/itensor-deconstructed/itensor-deconstructed.html).
+--->
 
 Note that the notebook relies on a number of packages that are registered in the
 [ITensor registry](https://github.com/ITensor/ITensorRegistry), you will need to add that
 registry before you can run the notebook locally. See the instructions
 [here](https://github.com/ITensor/ITensorRegistry?tab=readme-ov-file#using-the-registry).
 
+<!---
 The static webpage generation workflow is based on
 [this template](https://github.com/JuliaPluto/static-export-template), with the addition of
 [this line](https://github.com/ITensor/itensor-deconstructed/blob/97c67766fd8fbd3d4b23c0052ca042c9ce3976b7/.github/workflows/ExportPluto.yaml#L49)
 to add the ITensor registry so the dependencies can be installed properly.
+--->
